@@ -65,12 +65,51 @@ public class NhacdjCrawl {
 
 	public static List<Audio> crawlAudio(int topicId, String topicURL) {
 		List<Audio> result = new ArrayList<Audio>();
-
+		int pageSize = 2;
+		for(int page = 1 ; page < pageSize ; page++) {
+			try {
+				Document doc = Jsoup.connect(topicURL + "?p=" + page).userAgent(userAgent).get();
+				Element audios = doc.select("div#list-video-cat").first();
+				Elements audioList = audios.select("div.song-bit div.song-name a");
+				for(Element audio : audioList) {
+					//System.out.println(audio);
+					
+					Audio data = new Audio();
+					data.audioId = (int)IdGenerator.genAudioId();
+					data.name = audio.attr("title");
+					data.siteURL = audio.attr("href");
+					data.siteURL = data.siteURL.replaceAll("-s([0-9]+).html", "-zo$1.xml");
+					data.dataURL = crawlPlayURL(data.siteURL);
+					System.out.println(data);
+					DataAPI.insertAudio(topicId, data);
+					
+					
+				}
+				
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
 		return result;
+	}
+	
+	public static String crawlPlayURL(String dataURL) {
+		try {
+			Document doc = Jsoup.connect(dataURL).userAgent(userAgent).get();
+			String playURL = doc.select("media|content").first().attr("url");
+			System.out.println(playURL);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		return "";
 	}
 	
 	
 	public static void main(String[] args) {
-		crawlTopic(1, "http://nhacdj.7viet.com/Music-cat1.html");
+		//crawlTopic(1, "http://nhacdj.7viet.com/Music-cat1.html");
+		crawlAudio(1, "http://nhacdj.7viet.com/Nonstop-c1.html");
+		//crawlPlayURL("http://nhacdj.7viet.com/Nonstop-EDM-Is-The-Best-Of-My-Life-DJ-Duy-G-M-Mix-zo2491.xml");
 	}
 }
